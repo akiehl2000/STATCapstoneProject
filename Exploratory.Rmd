@@ -1,0 +1,165 @@
+---
+title: "Exploratory"
+author: "Adam Kiehl"
+date: "3/2/21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(alphavantager)
+```
+
+```{r, warning=FALSE}
+spList <- read.csv('./data/spList.csv') %>%
+  select(-X)
+```
+
+```{r}
+api_key = 'CZUL4Z920E682K7N'
+av_api_key(api_key)
+```
+
+```{r}
+testSeries = av_get('BABA', 'TIME_SERIES_DAILY', outputsize='full')
+```
+
+```{r}
+Series_2020 = testSeries[1331:nrow(testSeries), ]
+```
+
+```{r}
+ggplot(Series_2020, mapping=aes(x=timestamp, y=volume))+
+  geom_line() +
+  labs(x='Date', y='Volumne', title='BABA Timeseries of Daily Trading Volumes', subtitle='January 2020-Present')
+```
+
+```{r}
+ggplot(Series_2020, mapping=aes(x=timestamp, y=high))+
+  geom_line() +
+  labs(x='Date', y='Daily High', title='BABA Timeseries of Daily Highs', subtitle='January 2020-Present')
+```
+
+```{r}
+sp_daily_volumes = data.frame(spList)
+sp_daily_highs = data.frame(spList)
+volumes = list()
+highs = list()
+# for (i in 1:nrow(spList)) {
+for (i in 1:10) {
+  sym = as.character(spList[i,1])
+  temp = av_get(symbol = sym, 'TIME_SERIES_DAILY', outputsize='full')
+  volume_temp = list(temp$volume[which(temp$timestamp > '2020-01-01')])
+  high_temp = list(temp$high[which(temp$timestamp > '2020-01-01')])
+  volumes = rbind(volumes, volume_temp)
+  highs = rbind(highs, high_temp)
+  Sys.sleep(15)
+}
+```
+
+```{r}
+sp_daily_volumes = sp_daily_volumes[1:10,]
+sp_daily_highs = sp_daily_highs[1:10,]
+for (i in 1:292) {
+  volume_temp = c()
+  for (j in 1:10) {
+    volume_temp = c(volume_temp, volumes[[j]][i])
+  }
+  sp_daily_volumes = cbind(sp_daily_volumes, volume_temp)
+  high_temp = c()
+  for (j in 1:10) {
+    high_temp = c(high_temp, highs[[j]][i])
+  }
+  sp_daily_highs = cbind(sp_daily_highs, high_temp)
+}
+```
+
+```{r}
+times = temp$timestamp[which(temp$timestamp > '2020-01-01')]
+col_names = c('Symbol', 'Name', 'Sector', as.character(times))
+names(sp_daily_volumes) = col_names
+names(sp_daily_highs) = col_names
+```
+
+```{r}
+volume_avgs = data.frame(date = times)
+ind = sp_daily_volumes %>%
+  filter(Sector == 'Industrials')
+health = sp_daily_volumes %>%
+  filter(Sector == 'Health Care')
+info = sp_daily_volumes %>%
+  filter(Sector == 'Information Technology')
+comm = sp_daily_volumes %>%
+  filter(Sector == 'Communication Services')
+con = sp_daily_volumes %>%
+  filter(Sector == 'Consumer Discretionary')
+mean_ind = c()
+mean_health = c()
+mean_info = c()
+mean_comm = c()
+mean_con = c()
+for (i in 4:(3+length(times))) {
+  mean_ind = c(mean_ind, as.numeric(sapply(ind[i], mean)))
+  mean_health = c(mean_health, as.numeric(sapply(health[i], mean)))
+  mean_info = c(mean_info, as.numeric(sapply(info[i], mean)))
+  mean_comm = c(mean_comm, as.numeric(sapply(comm[i], mean)))
+  mean_con = c(mean_con, as.numeric(sapply(con[i], mean)))
+}
+volume_avgs$mean_ind = mean_ind
+volume_avgs$mean_health = mean_health
+volume_avgs$mean_info = mean_info
+volume_avgs$mean_comm = mean_comm
+volume_avgs$mean_con = mean_con
+```
+
+```{r}
+ggplot(volume_avgs) +
+  geom_line(aes(x = date, y = mean_ind), col = 'red') +
+  geom_line(aes(x = date, y = mean_health), col = 'blue') +
+  geom_line(aes(x = date, y = mean_info), col = 'green') +
+  geom_line(aes(x = date, y = mean_comm), col = 'orange') +
+  geom_line(aes(x = date, y = mean_con), col = 'purple') +
+  labs(x = 'Date', y = 'Mean Sector Volume', title = 'Average Trading Volumes by Sector', subtitle = 'January 2020-Present')
+```
+
+```{r}
+high_avgs = data.frame(date = times)
+ind = sp_daily_highs %>%
+  filter(Sector == 'Industrials')
+health = sp_daily_highs %>%
+  filter(Sector == 'Health Care')
+info = sp_daily_highs %>%
+  filter(Sector == 'Information Technology')
+comm = sp_daily_highs %>%
+  filter(Sector == 'Communication Services')
+con = sp_daily_highs %>%
+  filter(Sector == 'Consumer Discretionary')
+mean_ind = c()
+mean_health = c()
+mean_info = c()
+mean_comm = c()
+mean_con = c()
+for (i in 4:(3+length(times))) {
+  mean_ind = c(mean_ind, as.numeric(sapply(ind[i], mean)))
+  mean_health = c(mean_health, as.numeric(sapply(health[i], mean)))
+  mean_info = c(mean_info, as.numeric(sapply(info[i], mean)))
+  mean_comm = c(mean_comm, as.numeric(sapply(comm[i], mean)))
+  mean_con = c(mean_con, as.numeric(sapply(con[i], mean)))
+}
+high_avgs$mean_ind = mean_ind
+high_avgs$mean_health = mean_health
+high_avgs$mean_info = mean_info
+high_avgs$mean_comm = mean_comm
+high_avgs$mean_con = mean_con
+```
+
+```{r}
+ggplot(high_avgs) +
+  geom_line(aes(x = date, y = mean_ind), col = 'red') +
+  geom_line(aes(x = date, y = mean_health), col = 'blue') +
+  geom_line(aes(x = date, y = mean_info), col = 'green') +
+  geom_line(aes(x = date, y = mean_comm), col = 'orange') +
+  geom_line(aes(x = date, y = mean_con), col = 'purple') +
+  labs(x = 'Date', y = 'Mean Sector Price High', title = 'Average Price Highs by Sector', subtitle = 'January 2020-Present')
+```
