@@ -14,7 +14,7 @@ Import a list of assets in the S&P 500 and remove entries with incomplete data.
 ```{r, warning=FALSE}
 spList <- read.csv('./data/spList.csv') %>%
   select(-X) %>%
-  filter(!(Symbol %in% c('AMD', 'LB', 'ROP', 'RCL')))
+  filter(!(Symbol %in% c('AMD', 'CCL', 'LB', 'OKE', 'ROP', 'RCL', 'VZ', 'VFC')))
 ```
 Initialize API key for Alpha Vantage communication. 
 ```{r}
