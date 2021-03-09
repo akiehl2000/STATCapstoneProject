@@ -1,0 +1,115 @@
+---
+title: "Exploratory"
+author: "Adam Kiehl"
+date: "3/9/21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(alphavantager)
+library(RColorBrewer)
+```
+
+```{r}
+sp_daily_highs = read.csv('./data/sp_daily_highs.csv') %>%
+  select(-X)
+sp_daily_volumes = read.csv('./data/sp_daily_volumes.csv') %>%
+  select(-X)
+times = names(sp_daily_highs)[4:length(names(sp_daily_highs))]
+times = gsub('X', '', times)
+times = gsub('\\.', '-', times)
+```
+
+```{r}
+sp_moving_highs = data.frame(sp_daily_highs[,1:3])
+for (i in seq(4, 294, 5)) {
+  temp = sp_daily_highs[,(i+5)] - sp_daily_highs[,i]
+  sp_moving_highs = cbind(sp_moving_highs, temp)
+}
+names(sp_moving_highs) = c('Symbol', 'Name', 'Sector', times[seq(9, 299, 5)-3])
+```
+
+```{r}
+p_values = c()
+for (i in 4:ncol(sp_moving_highs)) {
+  p_values = c(p_values, summary(aov(sp_moving_highs[,i] ~ sp_moving_highs$Sector))[[1]][1,5])
+}
+sp_moving_highs_aov = data.frame(date = times[seq(9, 299, 5)-3], p = p_values)
+```
+
+```{r}
+times2 = times[seq(9, 299, 5)-3]
+times2[which(sp_moving_highs_aov$p > .05)] = ''
+ggplot(sp_moving_highs_aov) +
+  geom_point(aes(x = as.Date(date, format = '%Y-%m-%d'), y = log10(p))) +
+  geom_hline(yintercept = log10(.05), color = 'red', alpha = .5) +
+  geom_vline(xintercept = as.Date('2020-01-20'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-01-20'), y = -5, label = 'First US Case'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-03-11'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-03-11'), y = -5, label = 'WHO Declares Pandemic'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-03-26'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-03-26'), y = -5, label = 'CARES Act'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-05-28'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-05-28'), y = -5, label = '100,000 US Deaths'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-11-03'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-11-03'), y = -5, label = 'US Election'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-11-18'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-11-18'), y = -5, label = '250,000 US Deaths'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-12-11'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-12-11'), y = -5, label = 'Pfizer Vaccine'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-12-18'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-12-18'), y = -5, label = 'Moderna Vaccine'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2021-02-22'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2021-02-22'), y = -5, label = '500,000 US Deaths'), angle = 45, size = 2) + 
+  labs(x = 'Significant Dates', y = 'log(p-value)', title = 'log(p-values) for Weekly Price High Changes by Sector')
+```
+
+```{r}
+sp_moving_volumes = data.frame(sp_daily_volumes[,1:3])
+for (i in seq(4, 294, 5)) {
+  temp = sp_daily_volumes[,(i+5)] - sp_daily_volumes[,i]
+  sp_moving_volumes = cbind(sp_moving_volumes, temp)
+}
+names(sp_moving_volumes) = c('Symbol', 'Name', 'Sector', times[seq(9, 299, 5)-3])
+```
+
+```{r}
+p_values = c()
+for (i in 4:ncol(sp_moving_volumes)) {
+  p_values = c(p_values, summary(aov(sp_moving_volumes[,i] ~ sp_moving_volumes$Sector))[[1]][1,5])
+}
+sp_moving_volumes_aov = data.frame(date = times[seq(9, 299, 5)-3], p = p_values)
+```
+
+```{r}
+times2 = times[seq(9, 299, 5)-3]
+times2[which(sp_moving_volumes_aov$p > .05)] = ''
+ggplot(sp_moving_volumes_aov) +
+  geom_point(aes(x = as.Date(date, format = '%Y-%m-%d'), y = log10(p))) +
+  geom_hline(yintercept = log10(.05), color = 'red', alpha = .5) +
+  geom_vline(xintercept = as.Date('2020-01-20'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-01-20'), y = -10, label = 'First US Case'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-03-11'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-03-11'), y = -10, label = 'WHO Declares Pandemic'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-03-26'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-03-26'), y = -10, label = 'CARES Act'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-05-28'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-05-28'), y = -10, label = '100,000 US Deaths'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-11-03'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-11-03'), y = -10, label = 'US Election'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-11-18'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-11-18'), y = -10, label = '250,000 US Deaths'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-12-11'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-12-11'), y = -10, label = 'Pfizer Vaccine'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-12-18'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-12-18'), y = -10, label = 'Moderna Vaccine'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2021-02-22'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2021-02-22'), y = -10, label = '500,000 US Deaths'), angle = 45, size = 2) + 
+  labs(x = 'Significant Dates', y = 'log(p-value)', title = 'log(p-values) for Weekly Trading Volume Changes by Sector')
+```
+
+
+
+
