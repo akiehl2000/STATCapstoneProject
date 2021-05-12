@@ -17,6 +17,7 @@ library(forecast) # ARIMA Models
 library(tseries) # Autocorrelation Function
 library(MaskJointDensity) # anyNA() Function
 library(corrplot) # corrplot() Function
+library(ggpubr) # ggarrange() Function
 library(forecast) 
 ```
 
@@ -213,6 +214,8 @@ plt <- ggplot(high_2020) +
   geom_text(aes(x = as.Date('2020-12-11'), y = 200, label = 'Pfizer Vaccine'), angle = 45, size = 2) + 
   geom_vline(xintercept = as.Date('2020-12-18'), linetype = 3, alpha = .75) +
   geom_text(aes(x = as.Date('2020-12-18'), y = 200, label = 'Moderna Vaccine'), angle = 45, size = 2) + 
+  geom_vline(xintercept = as.Date('2020-09-01'), linetype = 3, alpha = .75) +
+  geom_text(aes(x = as.Date('2020-09-01'), y = 200, label = 'US Rejects WHO Vaccine Effort'), angle = 45, size = 2) + 
   labs(x='Date', y='Mean Price High', title='S&P 500 Average Price Highs', subtitle='January 2020-January 2021') +
   ylim(100, 250)
 for (brk in breakpoints(high_2020$mean_tot ~ high_2020$date)$breakpoints) {
@@ -669,29 +672,30 @@ cumsumSeries4 = rowMeans(cbind(cumsumSeries1, cumsumSeries2, cumsumSeries3))
 ```
 Calculate MSE for each prediction set.
 ```{r}
-mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2020-01-01')][1:60] - cumsumSeries1)^2)
-mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2020-01-01')][1:60] - cumsumSeries2)^2)
-mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2020-01-01')][1:60] - cumsumSeries3)^2)
-mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2020-01-01')][1:60] - cumsumSeries4)^2)
+mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) >= '2021-01-01')][1:60] - cumsumSeries1)^2)
+mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) >= '2021-01-01')][1:60] - cumsumSeries2)^2)
+mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) >= '2021-01-01')][1:60] - cumsumSeries3)^2)
+mean((high_avgs$mean_tot[which(as.Date(high_avgs$date) >= '2021-01-01')][1:60] - cumsumSeries4)^2)
 ```
 Plot aggregated time series and mean_tot time series that it simulates. 
 ```{r}
-ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
+pred1plot = ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = c(high_ts$high_tot_ts[which(as.Date(high_ts$date) > '2019-01-01')], cumsumSeries1)), color = 'red') +
-  labs(title = 'Seasonally and First-Differenced Predictions', subtitle = 'MSE: 368.54', x = 'Date', y = 'Price [$]')
-ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
+  labs(title = 'Seasonally and First-Differenced', subtitle = 'MSE: 862.04', x = 'Date', y = 'Price [$]')
+pred2plot = ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = c(high_ts$high_tot_ts[which(as.Date(high_ts$date) > '2019-01-01')], cumsumSeries2)), color = 'red') +
-  labs(title = 'First-Differenced and Seasonally Modelled Predictions', subtitle = 'MSE: 1084.40', x = 'Date', y = 'Price [$]')
-ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
+  labs(title = 'First-Differenced, Seasonally Modeled', subtitle = 'MSE: 392.37', x = 'Date', y = 'Price [$]')
+pred3plot = ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = c(high_ts$high_tot_ts[which(as.Date(high_ts$date) > '2019-01-01')], cumsumSeries3)), color = 'red') +
-  labs(title = 'Twice-Differenced Predictions', subtitle = 'MSE: 1334.86', x = 'Date', y = 'Price [$]')
-ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
+  labs(title = 'Twice-Differenced Predictions', subtitle = 'MSE: 32.04', x = 'Date', y = 'Price [$]')
+pred4plot = ggplot(mapping = aes(x = as.Date(high_avgs$date)[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = high_avgs$mean_tot[which(as.Date(high_avgs$date) > '2019-01-01')])) +
   geom_path(aes(y = c(high_ts$high_tot_ts[which(as.Date(high_ts$date) > '2019-01-01')], cumsumSeries4)), color = 'red') +
-  labs(title = 'Forecast Combination Predictions', subtitle = 'MSE: 800.28', x = 'Date', y = 'Price [$]')
+  labs(title = 'Forecast Combination Predictions', subtitle = 'MSE: 301.66', x = 'Date', y = 'Price [$]')
+ggarrange(pred1plot, pred2plot, pred3plot, pred4plot)
 ```
 
 
